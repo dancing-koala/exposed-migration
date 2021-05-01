@@ -1,4 +1,4 @@
-package com.dancing_koala.exposed_migration.sample
+package com.dancing_koala.exposed_migration.lib
 
 import org.jetbrains.exposed.dao.id.IntIdTable
 

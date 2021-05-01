@@ -1,6 +1,5 @@
 /build/
 /.gradle
-/src/main/resources/
 /.idea
 /out
 *.iml

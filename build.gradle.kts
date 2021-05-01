@@ -15,12 +15,9 @@ repositories {
 val exposedVersion: String by project
 dependencies {
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
-    implementation("com.h2database:h2:1.4.200")
-
-//    implementation("ch.qos.logback:logback-classic:1.2.3")
+    testImplementation("com.h2database:h2:1.4.200")
+    testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
     testImplementation(kotlin("test-junit"))
 }

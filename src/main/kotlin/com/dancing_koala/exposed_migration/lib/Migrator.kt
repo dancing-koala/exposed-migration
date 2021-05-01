@@ -1,9 +1,10 @@
 package com.dancing_koala.exposed_migration.lib
 
-import com.dancing_koala.exposed_migration.lib.database.MigrationEntity
 import com.dancing_koala.exposed_migration.lib.database.MigrationsTable
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -27,48 +28,45 @@ class Migrator(
             SchemaUtils.create(MigrationsTable)
         }
         transaction {
-            val lastMigration = MigrationEntity.find {
+            val lastMigratedVersion = MigrationsTable.select {
                 (MigrationsTable.successful eq true)
-            }.orderBy(MigrationsTable.version to SortOrder.DESC).limit(1).firstOrNull()
+            }.orderBy(MigrationsTable.version to SortOrder.DESC)
+                .limit(1)
+                .map { it[MigrationsTable.version] }
+                .firstOrNull() ?: -1
 
-            if (lastMigration == null) {
-                val duration = measureTimeMillis {
-                    initBlock()
-                }
+            if (lastMigratedVersion < 0) {
+                val duration = measureTimeMillis { initBlock() }
 
-                val result = MigrationEntity.new {
-                    version = currentVersion
-                    kclass = "initBlock"
-                    migratedAt = System.currentTimeMillis()
-                    executionTime = duration
-                    successful = true
-                }
-
+                val resultedValues = MigrationsTable.insert {
+                    it[version] = currentVersion
+                    it[kclass] = "initBlock"
+                    it[migratedAt] = System.currentTimeMillis()
+                    it[executionTime] = duration
+                    it[successful] = true
+                }.resultedValues
             } else {
-                val start = lastMigration.version
                 val end = currentVersion
 
-                val migrations = migrationContainer.findMigrationPath(start, end)
+                val migrations = migrationContainer.findMigrationPath(lastMigratedVersion, end)
 
                 if (migrations.isEmpty()) {
-                    if (start != end) {
-                        throw MissingMigrationException(start, end)
+                    if (lastMigratedVersion != end) {
+                        throw MissingMigrationException(lastMigratedVersion, end)
                     }
                     println("No migration to apply")
                     return@transaction
                 }
 
-                migrations.forEach {
-                    val duration = measureTimeMillis {
-                        it.migrate(this)
-                    }
+                migrations.forEach { migration ->
+                    val duration = measureTimeMillis { migration.migrate(this) }
 
-                    MigrationEntity.new {
-                        version = it.toVersion
-                        kclass = it::class.simpleName ?: "None"
-                        migratedAt = System.currentTimeMillis()
-                        executionTime = duration
-                        successful = true
+                    MigrationsTable.insert {
+                        it[version] = migration.toVersion
+                        it[kclass] = migration::class.simpleName ?: "None"
+                        it[migratedAt] = System.currentTimeMillis()
+                        it[executionTime] = duration
+                        it[successful] = true
                     }
                 }
             }
@@ -93,16 +91,12 @@ class Migrator(
                 migrations[start] = it
             }
 
-            val existing = targetMap[end]
-
-            if (existing != null) {
+            targetMap[end]?.let { existing->
                 println("Overriding migration $existing with $migration")
             }
 
             targetMap[end] = migration
         }
-
-        fun getMigrations(): Map<Int, Map<Int, Migration>> = migrations.toMap()
 
         fun findMigrationPath(start: Int, end: Int): List<Migration> {
             if (start == end) return emptyList()
