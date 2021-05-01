@@ -3,7 +3,7 @@ A simple migration system for Exposed Framework loosely based on Room Migration 
 
 ## Compatibility
 
-Compatible with Exposed 0.31.1 (I did not try with previous versions)
+Compatible with Exposed `0.31.1` (I did not try with previous versions)
 
 ## Download
 
@@ -18,13 +18,19 @@ allprojects {
 }
 ```
 
-Add dependency
+Add dependencies
 
 ```groovy
 dependencies {
-    implementation 'com.github.dancing-koala:exposed-migration:0.0.2'
+    implementation 'org.jetbrains.exposed:exposed-core:$exposed_version'
+    implementation 'com.github.dancing-koala:exposed-migration:0.0.3'
 }
 ```
+
+## How it works
+
+The `Migrator` adds a **MIGRATION** table into the database to store data about the last migration applied.
+It mainly uses the `version` field of the table to check against the current version.
 
 ## Usage
 
