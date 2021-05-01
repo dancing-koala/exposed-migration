@@ -19,6 +19,8 @@ dependencies {
 
     implementation("com.h2database:h2:1.4.200")
 
+    implementation("ch.qos.logback:logback-classic:1.2.3")
+
     testImplementation(kotlin("test-junit"))
 }
 
