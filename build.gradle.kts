@@ -2,10 +2,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.32"
+    maven
 }
 
 group = "fr.dancing_koala"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     mavenCentral()
@@ -22,6 +23,10 @@ dependencies {
 //    implementation("ch.qos.logback:logback-classic:1.2.3")
 
     testImplementation(kotlin("test-junit"))
+}
+
+tasks.test {
+    useJUnit()
 }
 
 tasks.withType<KotlinCompile>() {
